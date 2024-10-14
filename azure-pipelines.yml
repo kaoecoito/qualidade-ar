@@ -9,22 +9,67 @@ resources:
 - repo: self
 
 variables:
-  tag: '$(Build.BuildId)'
 
+Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: '7e2027eb-b4ac-4587-9a0e-5254b8782982'
+  imageRepository: 'kaoecoitoqualidadear'
+  containerRegistry: 'fiapteste.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.BuildId)'
+  
 stages:
+# Build Stage
 - stage: Build
-  displayName: Build image
+  displayName: Build Docker Image
   jobs:
   - job: Build
     displayName: Build
     pool:
       name: Default
-      vmImage: ubuntu-latest
+      vmImage: 'ubuntu-latest'
     steps:
     - task: Docker@2
-      displayName: Build an image
+      displayName: Build Docker Image
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
         tags: |
           $(tag)
+
+    - task: Docker@2
+      displayName: Push Image to Container Registry
+      inputs:
+        command: push
+        repository: $(imageName)
+        tags: |
+          $(tag)
+        containerRegistry: $(dockerRegistryServiceConnection)
+
+# Deploy to Staging
+    - stage: DeployStaging
+      displayName: Deploy to Staging
+      jobs:
+      - job: Deploy
+        displayName: Deploy to Staging
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - script: |
+            docker pull $(dockerRegistryServiceConnection)/$(imageName):$(tag)
+            docker-compose -f docker-compose.staging.yml up -d
+          displayName: Deploy to Staging Environment
+    
+    # Deploy to Production
+    - stage: DeployProduction
+      displayName: Deploy to Production
+      jobs:
+      - job: Deploy
+        displayName: Deploy to Production
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        - script: |
+            docker pull $(dockerRegistryServiceConnection)/$(imageName):$(tag)
+            docker-compose -f docker-compose.production.yml up -d
+          displayName: Deploy to Production Environment
+
