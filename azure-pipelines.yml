@@ -9,8 +9,6 @@ resources:
 - repo: self
 
 variables:
-
-Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: '7e2027eb-b4ac-4587-9a0e-5254b8782982'
   imageRepository: 'kaoecoitoqualidadear'
   containerRegistry: 'fiapteste.azurecr.io'
@@ -29,21 +27,14 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - task: Docker@2
-      displayName: Build Docker Image
+      displayName: Build and push an image to container registry
       inputs:
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-        tags: |
-          $(tag)
-
-    - task: Docker@2
-      displayName: Push Image to Container Registry
-      inputs:
-        command: push
-        repository: $(imageName)
-        tags: |
-          $(tag)
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
         containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
 
 # Deploy to Staging
     - stage: DeployStaging
