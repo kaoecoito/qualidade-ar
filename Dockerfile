@@ -12,7 +12,7 @@ WORKDIR /app
 
 COPY --from=build /builder/build/libs/qualidade-ar-0.0.1-SNAPSHOT.jar .
 
-EXPOSE 8080
+EXPOSE 80
 
 ENTRYPOINT java -jar qualidade-ar-0.0.1-SNAPSHOT.jar
 
